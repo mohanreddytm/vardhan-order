@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vardhan Order Tracker</title>
+<style>
+:root { --bg:#f6f5f2; --card:#fff; --ink:#1d1d1b; --mute:#6b6a66; --line:#e2e0da; --accent:#1f5f8b; --warn:#b3261e; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#171716; --card:#222221; --ink:#eeede8; --mute:#9a9892; --line:#35342f; --accent:#6db3e0; --warn:#f2877f; }
+}
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--ink); padding-bottom:70px; }
+header { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); }
+h1 { font-size:17px; margin:0; }
+main { max-width:720px; margin:0 auto; padding:12px; }
+nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--card); border-top:1px solid var(--line); }
+nav button { flex:1; padding:14px 4px; border:0; background:none; color:var(--mute); font-size:14px; }
+nav button.on { color:var(--accent); font-weight:600; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; }
+h2 { font-size:15px; margin:18px 0 8px; }
+.row { display:flex; justify-content:space-between; gap:8px; }
+.mute { color:var(--mute); font-size:13px; }
+.tag { font-size:12px; padding:2px 8px; border-radius:10px; border:1px solid var(--line); white-space:nowrap; }
+.late { color:var(--warn); font-weight:600; }
+input, select, button.go { font:inherit; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); }
+button.go { background:var(--accent); color:#fff; border:0; }
+.form { display:grid; gap:8px; }
+.inline { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.inline input { width:90px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Vardhan Order Tracker</h1>
+  <select id="role"></select>
+</header>
+<main id="view"></main>
+<nav id="tabs"></nav>
+<script>
+const STATUS = { new:'New', production:'In production', polish:'At polish', packing:'Packing', partial:'Part dispatched', dispatched:'Dispatched', hold:'On hold', returned:'Returned' };
+const ROLES = { Suresh:false, Kunal:true, Ramesh:true, Munshi:true };
+const TABS = { today:'Today', orders:'Orders', polish:'Polish', add:'New order' };
+let state = { orders:[], polish:[] };
+let role = localStorage.getItem('role') || 'Suresh';
+let tab = 'today';
+let filter = 'open';
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const age = d => Math.floor((Date.now() - new Date(d)) / 864e5);
+const canEdit = () => ROLES[role];
+
+async function call(path, data) {
+  const opts = data ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ ...data, by:role }) } : undefined;
+  const r = await fetch('/api/' + path, opts);
+  return { ok:r.ok, code:r.status, data:await r.json() };
+}
+
+async function refresh() {
+  state = (await call('state')).data;
+  draw();
+}
+
+function orderCard(o, actions) {
+  const late = age(o.created) > 5 && !['dispatched', 'returned'].includes(o.status);
+  let extra = '';
+  if (actions && canEdit()) {
+    const opts = Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${v}</option>`).join('');
+    extra = `<div class="inline">
+      <select id="st-${o.id}">${opts}</select>
+      <input id="nt-${o.id}" placeholder="note / hold reason" style="flex:1">
+      <button class="go" onclick="setStatus('${o.id}')">Update</button></div>
+      <div class="inline"><input id="dq-${o.id}" type="number" placeholder="qty sent">
+      <button class="go" onclick="sendQty('${o.id}')">Dispatch</button></div>`;
+  }
+  return `<div class="card"><div class="row"><b>${esc(o.party)}</b><span class="tag">${STATUS[o.status]}</span></div>
+    <div>${esc(o.item)} · ${o.qty} ${esc(o.unit)} <span class="mute">(${o.dispatched} sent)</span></div>
+    <div class="mute">${o.id} · <span class="${late ? 'late' : ''}">${age(o.created)} days old</span>${o.note ? ' · ' + esc(o.note) : ''}</div>${extra}</div>`;
+}
+
+function today() {
+  const open = state.orders.filter(o => !['dispatched', 'returned'].includes(o.status));
+  let html = '<h2>1. Pending orders by stage</h2>';
+  Object.keys(STATUS).filter(k => !['dispatched', 'returned', 'hold'].includes(k)).forEach(k => {
+    const list = open.filter(o => o.status === k).sort((a, b) => new Date(a.created) - new Date(b.created));
+    if (list.length) html += `<div class="mute">${STATUS[k]} (${list.length})</div>` + list.map(o => orderCard(o)).join('');
+  });
+  const held = open.filter(o => o.status === 'hold');
+  html += '<h2>2. On hold</h2>' + (held.map(o => orderCard(o)).join('') || '<div class="mute">Nothing on hold.</div>');
+  html += '<h2>3. Polish reconciliation</h2>' + state.polish.map(polishCard).join('');
+  return html;
+}
+
+function polishCard(p) {
+  const line = p.closed ? `${p.pcsBack} pcs back, ${p.shortKg} kg short` : `out ${age(p.sent)} days`;
+  const flag = p.closed && p.shortKg > 0 ? 'late' : '';
+  let extra = '';
+  if (!p.closed && canEdit()) {
+    extra = `<div class="inline"><input id="pc-${p.id}" type="number" placeholder="pcs back">
+      <input id="sk-${p.id}" type="number" placeholder="short kg"><button class="go" onclick="receive('${p.id}')">Receive</button></div>`;
+  }
+  return `<div class="card"><div class="row"><b>${esc(p.karigar)}</b><span class="tag">${p.closed ? 'Closed' : 'Open'}</span></div>
+    <div>${p.kgOut} kg sent${p.orderRef ? ' · ' + p.orderRef : ''}</div><div class="mute ${flag}">${line}</div>${extra}</div>`;
+}
+
+function orders() {
+  const f = `<select onchange="filter=this.value;draw()">
+    <option value="open" ${filter === 'open' ? 'selected' : ''}>Open orders</option>
+    <option value="all" ${filter === 'all' ? 'selected' : ''}>All orders</option></select>`;
+  const list = state.orders.filter(o => filter === 'all' || !['dispatched', 'returned'].includes(o.status));
+  return f + '<div style="height:10px"></div>' + list.map(o => orderCard(o, true)).join('');
+}
+
+function polish() {
+  const form = canEdit() ? `<div class="card form"><b>Send to karigar</b>
+    <input id="pk" placeholder="Karigar name"><input id="pw" type="number" placeholder="Weight sent (kg)">
+    <input id="pr" placeholder="Order ID (optional)"><button class="go" onclick="sendPolish()">Save</button></div>` : '';
+  return form + state.polish.map(polishCard).join('');
+}
+
+function add() {
+  if (!canEdit()) return '<div class="card">Only Kunal, Ramesh and Munshi ji can add orders.</div>';
+  return `<div class="card form"><input id="np" placeholder="Party"><input id="ni" placeholder="Item (e.g. Kadai No.10)">
+    <input id="nq" type="number" placeholder="Quantity">
+    <select id="nu"><option>pcs</option><option>dozen</option><option>set</option><option>kg</option></select>
+    <input id="nr" type="number" placeholder="Rate (blank if not confirmed)"><input id="nn" placeholder="Note">
+    <button class="go" onclick="addOrder()">Add order</button></div>`;
+}
+
+function draw() {
+  $('#role').innerHTML = Object.keys(ROLES).map(r => `<option ${r === role ? 'selected' : ''}>${r}</option>`).join('');
+  $('#tabs').innerHTML = Object.entries(TABS).map(([k, v]) => `<button class="${k === tab ? 'on' : ''}" onclick="tab='${k}';draw()">${v}</button>`).join('');
+  $('#view').innerHTML = { today, orders, polish, add }[tab]();
+}
+
+const $ = s => document.querySelector(s);
+const val = id => document.getElementById(id).value;
+
+async function act(path, data) {
+  const r = await call(path, data);
+  if (!r.ok && r.code !== 409) alert(r.data.error || 'Something went wrong');
+  await refresh();
+  return r;
+}
+
+const setStatus = id => act(`orders/${id}/status`, { status:val('st-' + id), note:val('nt-' + id) });
+const sendQty = id => act(`orders/${id}/dispatch`, { qty:val('dq-' + id) });
+const receive = id => act(`polish/${id}/receive`, { pcs:val('pc-' + id), shortKg:val('sk-' + id) });
+const sendPolish = () => act('polish', { karigar:val('pk'), kgOut:val('pw'), orderRef:val('pr') });
+
+async function addOrder() {
+  const data = { party:val('np'), item:val('ni'), qty:val('nq'), unit:val('nu'), rate:val('nr'), note:val('nn') };
+  let r = await call('orders', data);
+  if (r.code === 409 && confirm(`Looks like ${r.data.duplicateOf} already has this. Add anyway?`)) r = await call('orders', { ...data, force:true });
+  if (r.ok) tab = 'orders';
+  else if (r.code !== 409) alert(r.data.error);
+  refresh();
+}
+
+$('#role').onchange = e => { role = e.target.value; localStorage.setItem('role', role); draw(); };
+refresh();
+</script>
+</body>
+</html>

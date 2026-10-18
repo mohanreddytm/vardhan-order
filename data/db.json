@@ -1,0 +1,180 @@
+{
+  "seq": 8,
+  "pseq": 2,
+  "orders": [
+    {
+      "id": "VS-0001",
+      "party": "Gupta Traders Ambala",
+      "item": "Kadai No.10",
+      "qty": 200,
+      "unit": "pcs",
+      "rate": 185,
+      "status": "dispatched",
+      "dispatched": 200,
+      "note": "Second row on the sheet looked like a repeat",
+      "created": "2026-10-12T04:34:40.947Z",
+      "history": [
+        {
+          "status": "dispatched",
+          "at": "2026-10-12T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0002",
+      "party": "Sharma Bartan Bhandar Karnal",
+      "item": "Gilas 300ml",
+      "qty": 30,
+      "unit": "dozen",
+      "rate": 260,
+      "status": "hold",
+      "dispatched": 0,
+      "note": "Old dues 1.8L, Suresh ji to clear",
+      "created": "2026-10-13T04:34:40.947Z",
+      "history": [
+        {
+          "status": "hold",
+          "at": "2026-10-13T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0003",
+      "party": "Bansal & Sons Rohtak",
+      "item": "Tope No.6",
+      "qty": 120,
+      "unit": "pcs",
+      "rate": 340,
+      "status": "polish",
+      "dispatched": 0,
+      "note": "Waiting on polish",
+      "created": "2026-10-13T04:34:40.947Z",
+      "history": [
+        {
+          "status": "polish",
+          "at": "2026-10-13T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0004",
+      "party": "Jain Crockery Panipat",
+      "item": "Kadhai No 10",
+      "qty": 150,
+      "unit": "pcs",
+      "rate": 192,
+      "status": "production",
+      "dispatched": 0,
+      "note": "Sent twice on WhatsApp, check before making",
+      "created": "2026-10-13T04:34:40.947Z",
+      "history": [
+        {
+          "status": "production",
+          "at": "2026-10-13T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0005",
+      "party": "Mehra Kitchenware Jalandhar",
+      "item": "Kadai No.10",
+      "qty": 300,
+      "unit": "pcs",
+      "rate": 180,
+      "status": "partial",
+      "dispatched": 180,
+      "note": "180 gone on 4th, 120 on 6th",
+      "created": "2026-10-14T04:34:40.947Z",
+      "history": [
+        {
+          "status": "partial",
+          "at": "2026-10-14T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0006",
+      "party": "New Delhi Steel House",
+      "item": "Bhagona 8L",
+      "qty": 60,
+      "unit": "pcs",
+      "rate": 410,
+      "status": "polish",
+      "dispatched": 0,
+      "note": "",
+      "created": "2026-10-14T04:34:40.947Z",
+      "history": [
+        {
+          "status": "polish",
+          "at": "2026-10-14T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0007",
+      "party": "Verma Utensils Sonipat",
+      "item": "Kadhai No 10",
+      "qty": 180,
+      "unit": "kg",
+      "rate": null,
+      "status": "new",
+      "dispatched": 0,
+      "note": "Rate to be confirmed",
+      "created": "2026-10-16T04:34:40.947Z",
+      "history": [
+        {
+          "status": "new",
+          "at": "2026-10-16T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    },
+    {
+      "id": "VS-0008",
+      "party": "Gupta Traders Ambala",
+      "item": "Bhagona 8L",
+      "qty": 40,
+      "unit": "pcs",
+      "rate": 400,
+      "status": "polish",
+      "dispatched": 0,
+      "note": "",
+      "created": "2026-10-16T04:34:40.947Z",
+      "history": [
+        {
+          "status": "polish",
+          "at": "2026-10-16T04:34:40.947Z",
+          "by": "Kunal"
+        }
+      ]
+    }
+  ],
+  "polish": [
+    {
+      "id": "P-001",
+      "karigar": "Pappu",
+      "kgOut": 420,
+      "orderRef": "",
+      "sent": "2026-10-12T04:34:40.947Z",
+      "pcsBack": 1180,
+      "shortKg": 6,
+      "closed": true
+    },
+    {
+      "id": "P-002",
+      "karigar": "Pappu",
+      "kgOut": 150,
+      "orderRef": "VS-0003",
+      "sent": "2026-10-13T04:34:40.947Z",
+      "pcsBack": null,
+      "shortKg": null,
+      "closed": false
+    }
+  ]
+}

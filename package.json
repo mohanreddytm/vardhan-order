@@ -1,0 +1,8 @@
+{
+  "name": "vardhan-order-tracker",
+  "version": "1.0.0",
+  "description": "Phase 1 order tracker for Vardhan Steelware",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT"
+}
